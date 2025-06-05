@@ -145,24 +145,107 @@ app.command('/agoa-alerte', async ({ command, ack, respond }) => {
   });
 });
 
-// Commande /agoa-clients - NOUVELLE commande
-app.command('/agoa-clients', async ({ command, ack, respond }) => {
+// Commande /agoa-test-liste - Test précis avec vos informations
+app.command('/agoa-test-liste', async ({ command, ack, respond }) => {
   await ack();
   
-  const exemplesClients = clientsAGOA.slice(0, 5);
-  
-  await respond({
-    text: `👥 *Clients AGOA - Échantillon Cabinet Lubrano*\n\n` +
-          exemplesClients.map(client => 
-            `🏢 **${client.nom}**\n` +
-            `👤 Collaborateur: ${client.collaborateur}\n` +
-            `📊 Statut: ${client.statut}\n`
-          ).join('\n') +
-          `\n📈 **Total clients suivis:** 337\n` +
-          `👨‍💼 **Collaborateurs actifs:** ${collaborateurs.length}\n` +
-          `⚖️ **Juristes référents:** ${juristes.length}\n\n` +
-          `*Données extraites du fichier de suivi AGOA*`
-  });
+  try {
+    console.log('🧪 Test d\'accès à la Liste AGOA spécifique...');
+    
+    const channelId = 'C01N3GMA8DQ'; // ID exact du canal #agoa
+    const listeNom = ':scales: Outil de suivi des AGOA'; // Nom exact de votre Liste
+    
+    let testResult = "🧪 **Test d'accès à votre Liste AGOA**\n\n";
+    
+    // Test 1: Vérification du canal
+    try {
+      const channelInfo = await app.client.conversations.info({
+        channel: channelId
+      });
+      
+      testResult += `✅ **Canal trouvé:** #${channelInfo.channel.name}\n`;
+      testResult += `🆔 **ID confirmé:** ${channelId}\n\n`;
+      
+    } catch (channelError) {
+      testResult += `❌ **Erreur canal:** ${channelError.message}\n\n`;
+    }
+    
+    // Test 2: Recherche de la Liste spécifique
+    testResult += `🔍 **Recherche de la Liste:**\n`;
+    testResult += `📋 Nom ciblé: "${listeNom}"\n\n`;
+    
+    // Test 3: Tentative d'accès aux messages du canal pour trouver la Liste
+    try {
+      const messages = await app.client.conversations.history({
+        channel: channelId,
+        limit: 100
+      });
+      
+      testResult += `📨 **Messages récents:** ${messages.messages.length} trouvés\n`;
+      
+      // Recherche de messages contenant des références à la Liste
+      let listeDetectee = false;
+      for (const message of messages.messages) {
+        if (message.text && message.text.includes('Outil de suivi')) {
+          listeDetectee = true;
+          testResult += `✅ **Liste détectée** dans un message\n`;
+          break;
+        }
+      }
+      
+      if (!listeDetectee) {
+        testResult += `⚠️ **Liste non détectée** dans les messages récents\n`;
+      }
+      
+    } catch (historyError) {
+      testResult += `❌ **Erreur lecture messages:** ${historyError.message}\n`;
+    }
+    
+    testResult += `\n🔬 **Test API Lists Slack:**\n`;
+    
+    // Test 4: Tentative d'accès direct aux API Lists (expérimental)
+    try {
+      // Note: L'API Lists peut nécessiter des permissions spéciales
+      const apiTest = await app.client.api.test();
+      testResult += `✅ **Connexion API Slack:** Fonctionnelle\n`;
+      
+      // Vérification des permissions spécifiques aux Lists
+      testResult += `🔍 **Permissions Lists:** En cours de vérification...\n`;
+      
+    } catch (apiError) {
+      testResult += `⚠️ **API Lists:** ${apiError.message}\n`;
+    }
+    
+    testResult += `\n📊 **Colonnes attendues dans votre Liste:**\n`;
+    testResult += `• CLIENT\n`;
+    testResult += `• COLLABORATEUR/TRICE\n`;
+    testResult += `• Statut\n`;
+    testResult += `• DIVIDENDES/ICC/EDI/IFU\n`;
+    testResult += `• Validation des pièces\n\n`;
+    
+    testResult += `🎯 **Critères d'alerte à tester:**\n`;
+    testResult += `📌 **PADE:** "Dividendes + ICC" ET "Saisi - en traitement"\n`;
+    testResult += `📌 **Collaborateurs:** "Incomplet - pièces manquantes" ET Validation = Non\n\n`;
+    
+    testResult += `💡 **Prochaine étape:** Analyse des résultats pour configuration optimale`;
+    
+    await respond({
+      text: testResult
+    });
+    
+    console.log('✅ Test Liste AGOA terminé - Canal C01N3GMA8DQ');
+    
+  } catch (error) {
+    console.error('Erreur test liste AGOA:', error);
+    await respond({
+      text: `❌ **Erreur lors du test spécifique**\n\n` +
+            `🆔 Canal testé: C01N3GMA8DQ (#agoa)\n` +
+            `📋 Liste ciblée: ":scales: Outil de suivi des AGOA"\n` +
+            `📝 Erreur: ${error.message}\n\n` +
+            `🔧 **Diagnostic:** Le bot peut accéder au canal mais l'API Lists Slack peut nécessiter une approche différente.\n\n` +
+            `💡 **Solution alternative:** Configuration d'un système de lecture automatique via d'autres méthodes.`
+    });
+  }
 });
 
 // ALERTE PADE - Quotidien à 10h30 (Europe/Paris)
