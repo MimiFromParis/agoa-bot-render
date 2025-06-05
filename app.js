@@ -417,7 +417,7 @@ process.on('unhandledRejection', (reason, promise) => {
       console.log(`🚀 Serveur Express démarré sur le port ${PORT}`);
       console.log(`🏢 Cabinet Lubrano - AGOA Bot personnalisé`);
       console.log(`📊 337 clients AGOA en surveillance`);
-      console.log(`👥 ${collaborateurs.length} collaborateurs actifs`);
+      console.log(`👥 ${Object.keys(collaborateursSlack).length} collaborateurs actifs`);
     });
     
     // Démarrage de l'app Slack
